@@ -218,6 +218,8 @@ void OpspfSendProtocolPacket(OpspfInfData inf,OpspfPacketType packetType);
 
 void *recv_opspf(void *ptr);
 
+void *route_test1(void *ptr);
+
 void *encapsulate_and_send_opspf(void *ptr);
 
 void analyseIP(struct iphdr *ip);
@@ -264,6 +266,8 @@ void UpdateOpspfRoutingTable();
 string uint2strIP(uint addr);
 
 void route_test();
+
+void *route_test(void *ptr);
 
 #endif
 

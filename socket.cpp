@@ -39,12 +39,25 @@ int main(int argc,char* argv[])
 {
 	satelliteId = atoi(argv[1]);
 	initialize(satelliteId);
-
+	//StartTimer();
+	//recv_opspf();
+	//Send_Hello_Packet();
+	// string s;
+	// 	do{
+	// 	cin >> s;
+	// 	if(s == "stop"){
+	// 		//sys_stat=s;
+	// 		EndTimer();	
+	// 		cout<<"task down!"<<"\n";	
+	// 	}
+	// 	else if(s == "start"){		
+	// 		StartTimer();
+	// 	}
+	// }while(s != "exit");
 
 	pthread_t recv;
 	pthread_create(&recv,NULL,recv_opspf, NULL);
-	pthread_join(recv,NULL);
-	route_test();
+	pthread_join(recv,NULL);	
 }
 
 void initialize(int satelliteId)
@@ -256,6 +269,9 @@ void Send_Hello_Packet()
 				selfInf[i].changeStat = OPSPF_PORT_LINKDOWN;
 				Int_DB[satelliteId-1].port_stat[i] = false;
 				//UpdateOpspfRoutingTable();
+				// pthread_t route;
+				// pthread_create(&route,NULL,route_test, NULL);
+				// pthread_join(route,NULL);
 			  			pool.addTask(new NodeTask(new Message(
 			 		MSG_NODE_SendLsuPacket)));
 
@@ -364,33 +380,42 @@ void Flood_Lsu_Packet(int interfaceIndex)
 {
 	
 
-	if(recv_send_LSU ==true)
-	{
-		for (int j = 0; j < SINF_NUM; ++j)
-		{
-			selfInf[j].lsuAck = false;
-		}
+	// if(recv_send_LSU ==true)
+	// {
+	// 	for (int j = 0; j < SINF_NUM; ++j)
+	// 	{
+	// 		selfInf[j].lsuAck = false;
+	// 	}
 
-		for (int j = 0; j < SINF_NUM; ++j)
-		{
-			if(selfInf[j].stat == true && selfInf[j].lsuAck == false && Int_DB[satelliteId-1].port_stat[j] == true && j != interfaceIndex)
-			{
-				selfInf[j].lsutimestamp = GetTime();
-				cout<<to_string(lsuData.srcSatelliteId)+to_string(lsuData.srcPortId)+to_string(j)<<endl;
-				OpspfSendProtocolPacket(selfInf[j],OPSPF_LSU_PACKET);
-			}
+	// 	for (int j = 0; j < SINF_NUM; ++j)
+	// 	{
+	// 		if(selfInf[j].stat == true && selfInf[j].lsuAck == false && Int_DB[satelliteId-1].port_stat[j] == true && j != interfaceIndex)
+	// 		{
+	// 			selfInf[j].lsutimestamp = GetTime();
+	// 			cout<<to_string(lsuData.srcSatelliteId)+to_string(lsuData.srcPortId)+to_string(j)<<endl;
+	// 			OpspfSendProtocolPacket(selfInf[j],OPSPF_LSU_PACKET);
+	// 		}
 
-		}
-		sleep(OPSPF_LSU_TTL);
-	}
+	// 	}
+	// 	sleep(OPSPF_LSU_TTL);
+	// }
 	
 
+	// for (int j = 0; j < SINF_NUM; ++j)
+	// {
+	// 	if(selfInf[j].stat == true && selfInf[j].lsuAck == false)
+	// 	{
+	// 		selfInf[j].stat ==false;
+	// 		selfInf[j].changeStat = OPSPF_PORT_NOCHANGE;
+
+	// 	}		
+	// }
 	for (int j = 0; j < SINF_NUM; ++j)
 	{
-		if(selfInf[j].stat == true && selfInf[j].lsuAck == false)
+		if(selfInf[j].stat == true &&j!=interfaceIndex)
 		{
-			selfInf[j].stat ==false;
-			selfInf[j].changeStat = OPSPF_PORT_NOCHANGE;
+				cout<<to_string(lsuData.srcSatelliteId)+to_string(lsuData.srcPortId)+to_string(j)<<endl;
+				OpspfSendProtocolPacket(selfInf[j],OPSPF_LSU_PACKET);
 
 		}		
 	}
@@ -549,7 +574,7 @@ void *recv_opspf(void *ptr)
 	StartTimer();
 	//route_test();
 
-	while (1)
+	for(int i=0;;i++)
 	{
 		 n = recv(sockfd, buf, sizeof(buf), 0);
 	    if (n == -1)
@@ -632,6 +657,72 @@ void *recv_opspf(void *ptr)
 	close(sockfd);
     
 }
+
+// void *recv_opspf(void *ptr)
+// {
+// 	int sockfd = socket(PF_PACKET,  SOCK_RAW, htons(ETH_P_ALL));
+// 	char buf[2048];
+// 	ssize_t n = recv(sockfd, buf, sizeof(buf), 0);
+// 	struct iphdr *ip;
+// 	struct ethhdr *eth_header;	
+// 	int interfaceIndex;
+// 	StartTimer();
+// 	while(1)
+// 	{
+// 		if(n!=0)
+// 		{
+
+// 			eth_header = (struct ethhdr*)(buf);
+// 			ip = ( struct iphdr *)(buf+sizeof(ethhdr));
+// 			if(ip->protocol == IPPROTO_OPSPF )
+// 			{
+// 				if(ip->saddr != selfInf[0].ip && ip->saddr != selfInf[1].ip && ip->saddr != selfInf[2].ip
+// 				&& ip->saddr != selfInf[3].ip && ip->saddr != selfInf[4].ip && ip->saddr != selfInf[5].ip )
+// 				{
+// 					analyseIP(ip);
+// 					unsigned char* tmp1 = (unsigned char*)&ip->daddr;
+// 		        	unsigned char* tmp2;
+// 		        	for (int i = 0; i < SINF_NUM; ++i)
+// 			    	{
+// 			    		tmp2 = (unsigned char*)&selfInf[i].ip;
+// 			    		if(tmp1[0]==tmp2[0]&&tmp1[1]==tmp2[1]&&tmp1[2]==tmp2[2])// the same subnet ip 
+// 			    		{
+// 			    			interfaceIndex = i;
+// 			    			cout<<"Port"+to_string(interfaceIndex)+" receive pkt"<<endl;
+// 			    		}
+// 			    	}
+// 					OPSPF_Header *opspfhdr = (OPSPF_Header *)(buf +sizeof(ethhdr)+sizeof(struct iphdr));
+// 				    switch(opspfhdr->packetType)
+// 				    {
+// 				        case OPSPF_HELLO_PACKET:
+// 				          {
+// 				            OpspfHelloInfo *helloInfo =(OpspfHelloInfo*)(buf +sizeof(ethhdr)+sizeof(struct iphdr)+sizeof(OPSPF_Header));
+// 				            Opspf_Handle_HelloPacket(helloInfo,interfaceIndex);
+// 				            break;
+// 				          }
+// 				        case OPSPF_LSU_PACKET:
+// 				        {
+// 				            OpspfLsuInfo *lsuInfo =(OpspfLsuInfo*)(buf +sizeof(ethhdr)+sizeof(struct iphdr)+sizeof(OPSPF_Header));
+// 				            Opspf_Handle_LsuPacket(lsuInfo,interfaceIndex);
+// 				            break; 
+// 				        }
+// 				        case OPSPF_LSACK_PACKET:
+// 				        {
+// 				        	OpspfLsuackInfo *lsuackInfo =(OpspfLsuackInfo*)(buf +sizeof(ethhdr)+sizeof(struct iphdr)+sizeof(OPSPF_Header));
+// 				            Opspf_Handle_LsuackPacket(lsuackInfo,interfaceIndex);
+// 				            break; 
+// 				        }
+
+// 				        default:
+// 				            break;
+// 				    }
+
+// 				}
+// 			}
+// 		}
+// 		sleep(1);
+// 	}
+// }
 
 // void OpspfSendProtocolPacket(OpspfInfData inf,OpspfPacketType packetType)
 // {
@@ -865,7 +956,7 @@ void *recv_opspf(void *ptr)
 void analyseIP(struct iphdr *ip)
 {
     unsigned char* p = (unsigned char*)&ip->saddr;
-    //printf("Source IP\t: %u.%u.%u.%u\n",p[0],p[1],p[2],p[3]);
+    printf("Source IP\t: %u.%u.%u.%u\n",p[0],p[1],p[2],p[3]);
     p = (unsigned char*)&ip->daddr;
     //printf("Destination IP\t: %u.%u.%u.%u\n",p[0],p[1],p[2],p[3]);
 }
@@ -881,31 +972,35 @@ void Opspf_Handle_HelloPacket(const OpspfHelloInfo* helloInfo,int interfaceIndex
    cout<<"HelloPacket"+to_string(helloInfo->satelliteId)+ to_string(helloInfo->portId)<<endl;
    //cout<<"satelliteId : " +to_string(helloInfo->satelliteId)<<endl;
    //cout<<"portId : " + to_string(helloInfo->portId)<<endl;
-    selfInf[interfaceIndex].ttl = OPSPF_PORT_TTL;
-
+     selfInf[interfaceIndex].ttl = OPSPF_PORT_TTL;
+		// pthread_t route;
+		// pthread_create(&route,NULL,route_test, NULL);
+		// pthread_join(route,NULL);
     if(Int_DB[satelliteId-1].port_stat[interfaceIndex] == false) 
     {
-    	selfInf[interfaceIndex].changeStat = OPSPF_PORT_RELINK;
-    	Int_DB[satelliteId-1].port_stat[interfaceIndex] = true;
-    	UpdateOpspfRoutingTable();
-    	pthread_exit(NULL);
-    	route_test();
-    				
+		selfInf[interfaceIndex].changeStat = OPSPF_PORT_RELINK;
+		Int_DB[satelliteId-1].port_stat[interfaceIndex] = true;
+		UpdateOpspfRoutingTable();
 
-   //  	pool.addTask(new NodeTask(new Message(
- 		// MSG_ROUTE_Update)));
 
-    	// for (int i = 0; i < SINF_NUM; ++i)
-	    // {
-	    // 	OpspfSendProtocolPacket(selfInf[i],OPSPF_LSU_PACKET);
-	    // }
+		//  	pool.addTask(new NodeTask(new Message(
+		// MSG_ROUTE_Update)));
+
+		// for (int i = 0; i < SINF_NUM; ++i)
+		// {
+		// 	OpspfSendProtocolPacket(selfInf[i],OPSPF_LSU_PACKET);
+		// }
 		// pthread_t sendLsu;
-  //       pthread_create(&sendLsu,NULL,Send_Lsu_Packet, NULL);
-  //       pthread_join(sendLsu,NULL);
+		//       pthread_create(&sendLsu,NULL,Send_Lsu_Packet, NULL);
+		//       pthread_join(sendLsu,NULL);
 		pool.addTask(new NodeTask(new Message(
-		    MSG_NODE_SendLsuPacket)));
+		MSG_NODE_SendLsuPacket)));
   
-    }  
+    } 
+	// pthread_t route;
+	// pthread_create(&route,NULL,route_test, NULL);
+	// pthread_join(route,NULL);
+
 }
 
 void Opspf_Handle_LsuPacket(const OpspfLsuInfo* lsuInfo,int interfaceIndex)
@@ -918,8 +1013,10 @@ void Opspf_Handle_LsuPacket(const OpspfLsuInfo* lsuInfo,int interfaceIndex)
     int dstSatelliteId = lsuInfo->dstSatelliteId;
     int dstPortId = lsuInfo->dstPortId;
     int stat =lsuInfo->changeStat;
-	cout<<" LsuPacket"+to_string(srcSatelliteId)+to_string(srcPortId)<<endl;
-
+	cout<<"LsuPacket"+to_string(srcSatelliteId)+to_string(srcPortId)<<endl;
+	pthread_t route1;
+	pthread_create(&route1,NULL,route_test1, NULL);
+	pthread_join(route1,NULL);
    // cout<<"srcSatelliteId : "+to_string(srcSatelliteId)<<endl;
    // cout<<"srcPortId : "+to_string(srcPortId)<<endl;
     // cout<<"dstSatelliteId : "+to_string(dstSatelliteId)<<endl;
@@ -975,7 +1072,10 @@ void Opspf_Handle_LsuPacket(const OpspfLsuInfo* lsuInfo,int interfaceIndex)
     	UpdateOpspfRoutingTable();
 		// pool.addTask(new NodeTask(new Message(
  	// 	MSG_ROUTE_Update)));
-    	route_test();
+    	//route_test();
+		// pthread_t route;
+		// pthread_create(&route,NULL,route_test, NULL);
+		// pthread_join(route,NULL);
     	lsuData = *lsuInfo;
 	    // for (int i = 0; i < SINF_NUM; ++i)
 	    // {
@@ -1281,11 +1381,21 @@ void link_route_write()
 
 }
 
-void route_test()
+
+void *route_test(void *ptr)
 {
-	string cmd = "bash route.sh";
-	//string cmd = " ./route_test";
-	//system(cmd.c_str());
+		string cmd = "ip route add 190.0.13.0/24 via 190.0.5.2 dev sat2p1";
+     	system(cmd.c_str());
+
+
+}
+
+void *route_test1(void *ptr)
+{
+		string cmd = "ip route del 190.0.13.0/24 ";
+     	system(cmd.c_str());
+
+
 }
 
 // uint str2uintIP(string ipStr,int hostId)

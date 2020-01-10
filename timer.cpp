@@ -35,7 +35,7 @@ void SigHandle(int sig)
 {
     tv.tv_usec += TIME_SCALE * itv.it_interval.tv_usec;
     tv.tv_sec += TIME_SCALE * itv.it_interval.tv_sec;
-    cout << "Simulation time:" << GetTime() << " s." << endl;
+    //cout << "Simulation time:" << GetTime() << " s." << endl;
     
     pool.addTask(new NodeTask(new Message(
             MSG_NODE_SendHelloPacket)));

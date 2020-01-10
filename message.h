@@ -1,6 +1,6 @@
 #ifndef __MESSAGA_H__
 #define __MESSAGE_H__
-#include "opspf.h"
+//#include "opspf.h"
 #define SET(a,_a) a = _a
 #define GET(a) return a
 #define MESSAGE_FREE(m) delete m; m = NULL
